@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Visual Speed Perception Experiment</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+color:white;
+background:black;
+overflow-x:hidden;
+}
+
+canvas#stars{
+position:fixed;
+top:0;
+left:0;
+z-index:-1;
+}
+
+header{
+text-align:center;
+padding:40px;
+font-size:42px;
+font-weight:bold;
+background:linear-gradient(90deg,#ff0066,#00ccff);
+}
+
+.section{
+max-width:1000px;
+margin:auto;
+padding:40px;
+text-align:center;
+}
+
+video{
+width:80%;
+max-width:700px;
+border:3px solid white;
+border-radius:10px;
+margin:20px;
+}
+
+button{
+padding:15px 25px;
+font-size:18px;
+margin:10px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+background:#ff6600;
+color:white;
+}
+
+button:hover{
+background:#ff3300;
+}
+
+.dashboard{
+background:#111;
+border-radius:15px;
+padding:30px;
+box-shadow:0 0 20px #00ffff;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<canvas id="stars"></canvas>
+
+<header>
+Visual Hacking: Engineering the Illusion of Speed
+</header>
+
+
+<div class="section">
+
+<h2>Science Question</h2>
+
+<p>
+Can the spacing of lights in a tunnel change how fast people think they are moving?
+</p>
+
+</div>
+
+
+<div class="section">
+
+<h2>Watch the Tunnel Simulations</h2>
+
+<p>All tunnels move at the SAME speed.</p>
+
+<h3>Video A — Close Lights</h3>
+
+<video controls>
+<source src="tunnel_experiment.webm" type="video/webm">
+</video>
+
+<br>
+
+<button onclick="vote('A')">This Felt Fastest</button>
+
+<h3>Video B — Medium Lights</h3>
+
+<video controls>
+<source src="tunnel_experiment(1).webm" type="video/webm">
+</video>
+
+<br>
+
+<button onclick="vote('B')">This Felt Fastest</button>
+
+<h3>Video C — Wide Lights</h3>
+
+<video controls>
+<source src="tunnel_experiment(2).webm" type="video/webm">
+</video>
+
+<br>
+
+<button onclick="vote('C')">This Felt Fastest</button>
+
+</div>
+
+
+<div class="section dashboard">
+
+<h2>Live Results</h2>
+
+<canvas id="resultsChart"></canvas>
+
+</div>
+
+
+
+<script>
+
+/* vote storage */
+
+let votes = JSON.parse(localStorage.getItem("tunnelVotes")) || {
+A:0,
+B:0,
+C:0
+};
+
+function vote(option){
+
+votes[option]++;
+
+localStorage.setItem("tunnelVotes", JSON.stringify(votes));
+
+updateChart();
+
+}
+
+
+/* chart */
+
+let chart;
+
+function updateChart(){
+
+let data = [votes.A, votes.B, votes.C];
+
+if(chart){
+chart.data.datasets[0].data = data;
+chart.update();
+return;
+}
+
+let ctx = document.getElementById("resultsChart");
+
+chart = new Chart(ctx, {
+
+type: "bar",
+
+data:{
+
+labels:[
+"Close Lights",
+"Medium Lights",
+"Wide Lights"
+],
+
+datasets:[{
+
+label:"Votes",
+
+data:data
+
+}]
+
+}
+
+});
+
+}
+
+updateChart();
+
+
+
+/* animated background */
+
+let canvas = document.getElementById("stars");
+let ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let stars = [];
+
+for(let i=0;i<200;i++){
+
+stars.push({
+
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+size:Math.random()*2
+
+});
+
+}
+
+function animate(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+ctx.fillStyle="white";
+
+stars.forEach(s=>{
+
+s.y+=1;
+
+if(s.y>canvas.height) s.y=0;
+
+ctx.fillRect(s.x,s.y,s.size,s.size);
+
+});
+
+requestAnimationFrame(animate);
+
+}
+
+animate();
+
+</script>
+
+
+</body>
+
+</html>
