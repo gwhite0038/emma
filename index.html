@@ -3,7 +3,7 @@
 
 <head>
 
-<title>Visual Speed Perception Experiment</title>
+<title>Visual Hacking: Engineering the Illusion of Speed</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -47,10 +47,14 @@ border-radius:10px;
 margin:20px;
 }
 
+input[type=range]{
+width:60%;
+}
+
 button{
 padding:15px 25px;
 font-size:18px;
-margin:10px;
+margin:20px;
 border:none;
 border-radius:8px;
 cursor:pointer;
@@ -94,32 +98,16 @@ Can the spacing of lights in a tunnel change how fast people think they are movi
 </div>
 
 
+
 <div class="section">
 
-<h2>Watch the Tunnel Simulations</h2>
+<h2>Rate the Perceived Speed</h2>
 
+<p>
+Watch each video and rate how fast it feels from 1 (very slow) to 10 (very fast).
+</p>
 
-<h3>Video A </h3>
-
-<video controls>
-<source src="tunnel_experiment(1).webm" type="video/webm">
-</video>
-
-<br>
-
-<button onclick="vote('A')">This Felt Fastest</button>
-
-<h3>Video B </h3>
-
-<video controls>
-<source src="tunnel_experiment(5).webm" type="video/webm">
-</video>
-
-<br>
-
-<button onclick="vote('B')">This Felt Fastest</button>
-
-<h3>Video C </h3>
+<h3>Video A s</h3>
 
 <video controls>
 <source src="tunnel_experiment.webm" type="video/webm">
@@ -127,14 +115,46 @@ Can the spacing of lights in a tunnel change how fast people think they are movi
 
 <br>
 
-<button onclick="vote('C')">This Felt Fastest</button>
+<input type="range" min="1" max="10" value="5" id="sliderA">
+<p>Rating: <span id="valueA">5</span></p>
+
+
+
+<h3>Video B </h3>
+
+<video controls>
+<source src="tunnel_experiment(1).webm" type="video/webm">
+</video>
+
+<br>
+
+<input type="range" min="1" max="10" value="5" id="sliderB">
+<p>Rating: <span id="valueB">5</span></p>
+
+
+
+<h3>Video C </h3>
+
+<video controls>
+<source src="tunnel_experiment(5).webm" type="video/webm">
+</video>
+
+<br>
+
+<input type="range" min="1" max="10" value="5" id="sliderC">
+<p>Rating: <span id="valueC">5</span></p>
+
+<br>
+
+<button onclick="submitRatings()">Submit Ratings</button>
 
 </div>
 
 
+
 <div class="section dashboard">
 
-<h2>Live Results</h2>
+<h2>Average Perceived Speed</h2>
 
 <canvas id="resultsChart"></canvas>
 
@@ -144,80 +164,117 @@ Can the spacing of lights in a tunnel change how fast people think they are movi
 
 <script>
 
-/* vote storage */
+/* sliders */
 
-let votes = JSON.parse(localStorage.getItem("tunnelVotes")) || {
-A:0,
-B:0,
-C:0
-};
+let sliderA = document.getElementById("sliderA")
+let sliderB = document.getElementById("sliderB")
+let sliderC = document.getElementById("sliderC")
 
-function vote(option){
+let valueA = document.getElementById("valueA")
+let valueB = document.getElementById("valueB")
+let valueC = document.getElementById("valueC")
 
-votes[option]++;
+sliderA.oninput = () => valueA.innerText = sliderA.value
+sliderB.oninput = () => valueB.innerText = sliderB.value
+sliderC.oninput = () => valueC.innerText = sliderC.value
 
-localStorage.setItem("tunnelVotes", JSON.stringify(votes));
 
-updateChart();
+
+/* storage */
+
+let data = JSON.parse(localStorage.getItem("speedRatings")) || []
+
+function submitRatings(){
+
+let entry = {
+
+A:Number(sliderA.value),
+B:Number(sliderB.value),
+C:Number(sliderC.value)
 
 }
+
+data.push(entry)
+
+localStorage.setItem("speedRatings", JSON.stringify(data))
+
+updateChart()
+
+alert("Thanks for participating!")
+
+}
+
 
 
 /* chart */
 
-let chart;
+let chart
 
 function updateChart(){
 
-let data = [votes.A, votes.B, votes.C];
+if(data.length === 0) return
+
+let sumA=0,sumB=0,sumC=0
+
+data.forEach(d=>{
+
+sumA+=d.A
+sumB+=d.B
+sumC+=d.C
+
+})
+
+let avgA = sumA/data.length
+let avgB = sumB/data.length
+let avgC = sumC/data.length
+
+let values=[avgA,avgB,avgC]
 
 if(chart){
-chart.data.datasets[0].data = data;
-chart.update();
-return;
+
+chart.data.datasets[0].data = values
+chart.update()
+return
+
 }
 
-let ctx = document.getElementById("resultsChart");
+let ctx = document.getElementById("resultsChart")
 
-chart = new Chart(ctx, {
+chart = new Chart(ctx,{
 
-type: "bar",
+type:"bar",
 
 data:{
 
-labels:[
-"Close Lights",
-"Medium Lights",
-"Wide Lights"
-],
+labels:["Close Lights","Medium Lights","Wide Lights"],
 
 datasets:[{
 
-label:"Votes",
+label:"Average Speed Rating",
 
-data:data
+data:values
 
 }]
 
 }
 
-});
+})
 
 }
 
-updateChart();
+updateChart()
 
 
 
 /* animated background */
 
-let canvas = document.getElementById("stars");
-let ctx = canvas.getContext("2d");
+let canvas=document.getElementById("stars")
+let ctx=canvas.getContext("2d")
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight
 
-let stars = [];
+let stars=[]
 
 for(let i=0;i<200;i++){
 
@@ -227,36 +284,35 @@ x:Math.random()*canvas.width,
 y:Math.random()*canvas.height,
 size:Math.random()*2
 
-});
+})
 
 }
 
 function animate(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.clearRect(0,0,canvas.width,canvas.height)
 
-ctx.fillStyle="white";
+ctx.fillStyle="white"
 
 stars.forEach(s=>{
 
-s.y+=1;
+s.y+=1
 
-if(s.y>canvas.height) s.y=0;
+if(s.y>canvas.height)s.y=0
 
-ctx.fillRect(s.x,s.y,s.size,s.size);
+ctx.fillRect(s.x,s.y,s.size,s.size)
 
-});
+})
 
-requestAnimationFrame(animate);
+requestAnimationFrame(animate)
 
 }
 
-animate();
+animate()
 
 </script>
 
 
 </body>
-
 
 </html>
