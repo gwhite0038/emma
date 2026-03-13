@@ -77,7 +77,6 @@ box-shadow:0 0 20px #00ffff;
 
 </head>
 
-
 <body>
 
 <canvas id="stars"></canvas>
@@ -85,7 +84,6 @@ box-shadow:0 0 20px #00ffff;
 <header>
 Visual Hacking: Engineering the Illusion of Speed
 </header>
-
 
 <div class="section">
 
@@ -97,8 +95,6 @@ Can the spacing of lights in a tunnel change how fast people think they are movi
 
 </div>
 
-
-
 <div class="section">
 
 <h2>Rate the Perceived Speed</h2>
@@ -107,7 +103,7 @@ Can the spacing of lights in a tunnel change how fast people think they are movi
 Watch each video and rate how fast it feels from 1 (very slow) to 10 (very fast).
 </p>
 
-<h3>Video A s</h3>
+<h3>Video A — Close Lights</h3>
 
 <video controls>
 <source src="tunnel_experiment.webm" type="video/webm">
@@ -118,9 +114,7 @@ Watch each video and rate how fast it feels from 1 (very slow) to 10 (very fast)
 <input type="range" min="1" max="10" value="5" id="sliderA">
 <p>Rating: <span id="valueA">5</span></p>
 
-
-
-<h3>Video B </h3>
+<h3>Video B — Medium Lights</h3>
 
 <video controls>
 <source src="tunnel_experiment(1).webm" type="video/webm">
@@ -131,9 +125,7 @@ Watch each video and rate how fast it feels from 1 (very slow) to 10 (very fast)
 <input type="range" min="1" max="10" value="5" id="sliderB">
 <p>Rating: <span id="valueB">5</span></p>
 
-
-
-<h3>Video C </h3>
+<h3>Video C — Wide Lights</h3>
 
 <video controls>
 <source src="tunnel_experiment(5).webm" type="video/webm">
@@ -150,61 +142,67 @@ Watch each video and rate how fast it feels from 1 (very slow) to 10 (very fast)
 
 </div>
 
-
-
 <div class="section dashboard">
 
 <h2>Average Perceived Speed</h2>
 
 <canvas id="resultsChart"></canvas>
 
+<br><br>
+
+<button onclick="downloadData()">Download Local Data</button>
+
 </div>
-
-
 
 <script>
 
+/* Google Apps Script endpoint */
+
+const API_URL = "https://script.google.com/macros/s/AKfycbxq9dCcQGCfNxx5SiLZNdtAGXrWu-dbPIpx7xYKwSgorQKyKzaxyi7lSR850MCOgtwsig/exec"
+
 /* sliders */
 
-let sliderA = document.getElementById("sliderA")
-let sliderB = document.getElementById("sliderB")
-let sliderC = document.getElementById("sliderC")
+let sliderA=document.getElementById("sliderA")
+let sliderB=document.getElementById("sliderB")
+let sliderC=document.getElementById("sliderC")
 
-let valueA = document.getElementById("valueA")
-let valueB = document.getElementById("valueB")
-let valueC = document.getElementById("valueC")
+let valueA=document.getElementById("valueA")
+let valueB=document.getElementById("valueB")
+let valueC=document.getElementById("valueC")
 
-sliderA.oninput = () => valueA.innerText = sliderA.value
-sliderB.oninput = () => valueB.innerText = sliderB.value
-sliderC.oninput = () => valueC.innerText = sliderC.value
+sliderA.oninput=()=>valueA.innerText=sliderA.value
+sliderB.oninput=()=>valueB.innerText=sliderB.value
+sliderC.oninput=()=>valueC.innerText=sliderC.value
 
+/* local storage */
 
-
-/* storage */
-
-let data = JSON.parse(localStorage.getItem("speedRatings")) || []
+let data=JSON.parse(localStorage.getItem("speedRatings"))||[]
 
 function submitRatings(){
 
-let entry = {
-
+let entry={
 A:Number(sliderA.value),
 B:Number(sliderB.value),
 C:Number(sliderC.value)
-
 }
 
-data.push(entry)
+/* save locally */
 
-localStorage.setItem("speedRatings", JSON.stringify(data))
+data.push(entry)
+localStorage.setItem("speedRatings",JSON.stringify(data))
+
+/* send to google sheet */
+
+fetch(API_URL,{
+method:"POST",
+body:JSON.stringify(entry)
+})
 
 updateChart()
 
-alert("Thanks for participating!")
+alert("Thanks for participating in the experiment!")
 
 }
-
-
 
 /* chart */
 
@@ -212,59 +210,76 @@ let chart
 
 function updateChart(){
 
-if(data.length === 0) return
+if(data.length===0)return
 
 let sumA=0,sumB=0,sumC=0
 
 data.forEach(d=>{
-
 sumA+=d.A
 sumB+=d.B
 sumC+=d.C
-
 })
 
-let avgA = sumA/data.length
-let avgB = sumB/data.length
-let avgC = sumC/data.length
+let avgA=sumA/data.length
+let avgB=sumB/data.length
+let avgC=sumC/data.length
 
 let values=[avgA,avgB,avgC]
 
 if(chart){
-
-chart.data.datasets[0].data = values
+chart.data.datasets[0].data=values
 chart.update()
 return
-
 }
 
-let ctx = document.getElementById("resultsChart")
+let ctx=document.getElementById("resultsChart")
 
-chart = new Chart(ctx,{
-
+chart=new Chart(ctx,{
 type:"bar",
-
 data:{
-
 labels:["Close Lights","Medium Lights","Wide Lights"],
-
 datasets:[{
-
 label:"Average Speed Rating",
-
 data:values
-
 }]
-
 }
-
 })
 
 }
 
 updateChart()
 
+/* download csv */
 
+function downloadData(){
+
+let data=JSON.parse(localStorage.getItem("speedRatings"))||[]
+
+if(data.length===0){
+alert("No data collected yet.")
+return
+}
+
+let csv="Participant,Video A,Video B,Video C\n"
+
+data.forEach((d,i)=>{
+csv+=(i+1)+","+d.A+","+d.B+","+d.C+"\n"
+})
+
+let blob=new Blob([csv],{type:"text/csv"})
+
+let url=URL.createObjectURL(blob)
+
+let a=document.createElement("a")
+
+a.href=url
+a.download="tunnel_speed_experiment_data.csv"
+
+a.click()
+
+URL.revokeObjectURL(url)
+
+}
 
 /* animated background */
 
@@ -277,15 +292,11 @@ canvas.height=window.innerHeight
 let stars=[]
 
 for(let i=0;i<200;i++){
-
 stars.push({
-
 x:Math.random()*canvas.width,
 y:Math.random()*canvas.height,
 size:Math.random()*2
-
 })
-
 }
 
 function animate(){
@@ -295,13 +306,9 @@ ctx.clearRect(0,0,canvas.width,canvas.height)
 ctx.fillStyle="white"
 
 stars.forEach(s=>{
-
 s.y+=1
-
 if(s.y>canvas.height)s.y=0
-
 ctx.fillRect(s.x,s.y,s.size,s.size)
-
 })
 
 requestAnimationFrame(animate)
@@ -311,7 +318,6 @@ requestAnimationFrame(animate)
 animate()
 
 </script>
-
 
 </body>
 
